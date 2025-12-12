@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spine</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Spine" />
+  <meta property="og:description" content="Drag letters up and down to form hidden anagram-words. Each set is a tiny daily fidget: reorder, discover, and feel language snap into place." />
+  <meta property="og:image" content="https://{DOMAIN}/assets/hero.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://{DOMAIN}/" />
+
+  <!-- Farcaster Mini App meta (JSON-stringified) -->
+  <meta name="fc:miniapp" content="{&quot;version&quot;: &quot;1&quot;, &quot;name&quot;: &quot;Spine&quot;, &quot;homeUrl&quot;: &quot;https://{DOMAIN}/&quot;, &quot;iconUrl&quot;: &quot;https://{DOMAIN}/assets/icon.png&quot;, &quot;splashImageUrl&quot;: &quot;https://{DOMAIN}/assets/splash.png&quot;, &quot;splashBackgroundColor&quot;: &quot;#020617&quot;, &quot;subtitle&quot;: &quot;Words you can physically rearrange.&quot;, &quot;description&quot;: &quot;Drag letters up and down to form hidden anagram-words. Each set is a tiny daily fidget: reorder, discover, and feel language snap into place.&quot;, &quot;primaryCategory&quot;: &quot;art-creativity&quot;, &quot;tags&quot;: [&quot;fun&quot;, &quot;simple&quot;, &quot;utility&quot;], &quot;heroImageUrl&quot;: &quot;https://{DOMAIN}/assets/hero.png&quot;, &quot;ogTitle&quot;: &quot;Spine&quot;, &quot;ogDescription&quot;: &quot;Drag letters up and down to form hidden anagram-words. Each set is a tiny daily fidget: reorder, discover, and feel language snap into place.&quot;, &quot;ogImageUrl&quot;: &quot;https://{DOMAIN}/assets/hero.png&quot;, &quot;screenshotUrls&quot;: [&quot;https://{DOMAIN}/assets/hero.png&quot;], &quot;noindex&quot;: true, &quot;imageUrl&quot;: &quot;https://{DOMAIN}/assets/embed-3x2.png&quot;, &quot;button&quot;: {&quot;title&quot;: &quot;Open&quot;, &quot;action&quot;: {&quot;type&quot;: &quot;launch_frame&quot;, &quot;url&quot;: &quot;https://{DOMAIN}/&quot;}}}" />
+
+  <!-- Backwards compatible Farcaster Frame tags -->
+  <meta property="fc:frame" content="vNext" />
+  <meta property="fc:frame:image" content="https://{DOMAIN}/assets/embed-3x2.png" />
+  <meta property="fc:frame:button:1" content="Open" />
+  <meta property="fc:frame:button:1:action" content="link" />
+  <meta property="fc:frame:button:1:target" content="https://{DOMAIN}/" />
+
+  <!-- Required launch_frame fields mirrored in meta JSON above -->
+  <meta property="fc:frame:action" content="launch_frame" />
+  <meta property="fc:frame:post_url" content="https://{DOMAIN}/" />
+  <meta property="fc:frame:splash_image" content="https://{DOMAIN}/assets/splash.png" />
+  <meta property="fc:frame:splash_background_color" content="#020617" />
+
+  <style>
+    :root {
+      --bg: #020617;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --line: rgba(148,163,184,.25);
+      --accent: #6366f1;
+      --good: #22c55e;
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 30% 10%, rgba(99,102,241,.18), transparent 50%),
+                  radial-gradient(1000px 700px at 80% 30%, rgba(34,197,94,.10), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .page {
+      min-height: 100%;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 16px;
+    }
+    .shell {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(2,6,23,.45);
+      backdrop-filter: blur(10px);
+    }
+    .banner .title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .banner .title strong {
+      font-size: 14px;
+      letter-spacing: .12em;
+    }
+    .banner .title span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #status {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: right;
+      max-width: 210px;
+      line-height: 1.2;
+    }
+
+    /* App UI */
+    .wrap { display: flex; flex-direction: column; gap: 12px; }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 2px 4px;
+    }
+    .brand .logo {
+      font-weight: 800;
+      letter-spacing: .16em;
+      font-size: 13px;
+    }
+    .brand .sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .card.celebrate {
+      border-color: rgba(34,197,94,.6);
+      box-shadow: 0 18px 60px rgba(34,197,94,.10), var(--shadow);
+      transform: translateY(-1px);
+      transition: transform .18s ease;
+    }
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+    .stage {
+      display: grid;
+      gap: 12px;
+    }
+    .letters {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 18px;
+      background: rgba(0,0,0,.16);
+      border: 1px solid rgba(148,163,184,.14);
+      user-select: none;
+      touch-action: none;
+    }
+    .letter {
+      height: 52px;
+      display: grid;
+      grid-template-columns: 10px 1fr 10px;
+      align-items: center;
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .letter .cap {
+      height: 26px;
+      width: 6px;
+      justify-self: center;
+      border-radius: 999px;
+      background: rgba(99,102,241,.55);
+      filter: blur(.2px);
+    }
+    .letter .ch {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .25em;
+      transform: translateX(4px); /* center w/ letter spacing */
+    }
+    .letter.dragging {
+      outline: 2px solid rgba(99,102,241,.55);
+      background: rgba(99,102,241,.10);
+    }
+
+    .wordline {
+      display: grid;
+      gap: 4px;
+      padding: 6px 2px;
+      text-align: center;
+    }
+    .word {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: .18em;
+    }
+    .word.good {
+      color: var(--good);
+      text-shadow: 0 0 18px rgba(34,197,94,.18);
+    }
+    .vibe {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.25;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .btn {
+      border: 1px solid rgba(148,163,184,.22);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: transform .08s ease, background .18s ease, border-color .18s ease;
+    }
+    .btn:active { transform: scale(.99); }
+    .btn:hover { background: rgba(255,255,255,.10); border-color: rgba(148,163,184,.3); }
+    .btn.ghost {
+      background: transparent;
+    }
+
+    .reveal {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      padding-top: 6px;
+    }
+    .pill {
+      font-size: 12px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,.18);
+      background: rgba(0,0,0,.14);
+      color: var(--muted);
+      letter-spacing: .06em;
+    }
+    .pill.on {
+      color: var(--text);
+      border-color: rgba(34,197,94,.55);
+      background: rgba(34,197,94,.10);
+    }
+
+    .foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 2px 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .tiny { opacity: .9; }
+
+    @media (max-width: 380px) {
+      .actions { grid-template-columns: 1fr; }
+      #status { max-width: 160px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="shell">
+      <div class="banner">
+        <div class="title">
+          <strong>Spine</strong>
+          <span>Words you can physically rearrange.</span>
+        </div>
+        <div id="status">Loading…</div>
+      </div>
+
+      <div id="app" aria-label="Spine Mini App"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
